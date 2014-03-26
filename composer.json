@@ -1,5 +1,5 @@
 {
-    "name": "idct/networking/soap/client",
+    "name": "idct/soap-client",
     "description": "Library that provides SOAP client through cURL to add support for timeouts.",
     "type": "library",
     "keywords": [
@@ -17,11 +17,11 @@
         }
     ],
     "support": {
-        "issues": "https://github.com/ideaconnect/idct-soap-client/issues",
+        "issues": "https://github.com/ideaconnect/idct-soap-client/issues"
     },
     "minimum-stability": "dev",
     "require": {
-        "php": ">=5.3.0",
+        "php": ">=5.3.0"
     },
     "autoload": {
         "classmap": [
