@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="idct-soap-client">
+ <target name="clean" description="Cleanup build artifacts">
+  <delete dir="${basedir}/vendor"/>
+  <delete file="${basedir}/composer.lock"/>
+
+  <delete>
+   <fileset dir="${basedir}/build">
+    <include name="**/*.phar" />
+   </fileset>
+  </delete>
+ </target>
+</project>
