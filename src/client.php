@@ -151,7 +151,7 @@ class Client extends \SoapClient {
         if($timeoutInSeconds < 0) {
             throw new \Exception('Persistance timeout must be a positive integer or 0 to disable.');
         } else {
-            $this->persistanceFactor = $timeoutInSeconds;
+            $this->persistanceTimeout = $timeoutInSeconds;
         }
         
         return $this;
