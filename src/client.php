@@ -280,7 +280,9 @@ class Client extends \SoapClient {
             }
             
             $response = curl_exec($ch);
-            if(curl_errno($ch) !== 0 && $attempt >= $this->persistanceFactor -1) {
+            $errno = curl_errno($ch);
+            curl_close($ch);
+            if($errno !== 0 && $attempt >= $this->persistanceFactor -1) {
                 throw new \Exception('Request failed for the maximum number of attempts.');
             } else {
                 break;
