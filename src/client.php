@@ -6,71 +6,79 @@ class Client extends \SoapClient {
 
     /**
      * Defines if request will be sent with a basic http auth
-     * 
-     * @var boolean 
+     *
+     * @var boolean
      */
     protected $auth;
-    
+
     /**
      * If auth set to true this will be sent as login for the basic http auth
-     * 
+     *
      * @var string
      */
     protected $authLogin;
-    
+
     /**
      * If auth set to true this will be sent as password for the basic http auth
-     * 
+     *
      * @var string
      */
     protected $authPassword;
-    
+
     /**
      * Associative array of custom headers to sent together with the request
-     * 
+     *
      * @var array
      */
     protected $customHeaders;
 
     /**
      * If set to false then request will not fail in case of invalid SSL cert
-     * 
+     *
      * @var boolean
      */
     protected $ignoreCertVerify;
 
     /**
-     * Connection negotiation timeout in seconds 
-     * 
+     * Connection negotiation timeout in seconds
+     *
      * @var int
      */
     protected $negotiationTimeout;
-    
+
     /**
      * Number of retries until exception is thrown
-     * 
+     *
      * @var int
      */
     protected $persistanceFactor;
-    
+
     /**
      * Read timeout (after a successful connection) in seconds)
-     * 
+     *
      * @var int
      */
     protected $persistanceTimeout;
-    
+
     /**
      * Constructor of the new object. Creates an instance of the new SoapClient.
      * Sets default values of the timeouts and number of retries.
-     * 
+     *
      * @param sting $wsdl Url of the WebService's wsdl
      * @param array $options PHP SoapClient's array of options
      * @param int $negotiationTimeout Connection timeout in seconds. 0 to disable.
      * @param int $persistanceFactor Number of retries.
-     * @param int $persistanceTimeout Read timeout in seconds. 0 to disable.
+     * @param int $persistanceTimeout Read timeout in seconds. 0 to disable. null to use ini default_socket_timeout
      */
-    public function __construct($wsdl, $options, $negotiationTimeout = 0, $persistanceFactor = 1, $persistanceTimeout = 0) {	
+    public function __construct($wsdl, $options, $negotiationTimeout = 0, $persistanceFactor = 1, $persistanceTimeout = null) {
+
+        if($persistanceTimeout === null)
+        {
+            //let us try default to default_socket_timeout
+            $iniDefaultSocketTimeout = ini_get('default_socket_timeout');
+            $persistanceTimeout = $iniDefaultSocketTimeout ? $iniDefaultSocketTimeout : 0; //if setting missing default to disabled value (0)
+        }
+
         $this->setNegotiationTimeout($negotiationTimeout)
              ->setPersistanceFactor($persistanceFactor)
              ->setPersistanceTimeout($persistanceTimeout)
@@ -88,12 +96,12 @@ class Client extends \SoapClient {
         $this->customHeaders = array();
         parent::__construct($wsdl,$options);
     }
-    
+
     /**
      * Sets the negotiation (connection) timeout in seconds.
      * Throws an exception in case a negative value.
      * Set 0 to disable the timeout.
-     * 
+     *
      * @param int $timeoutInSeconds
      */
     public function setNegotiationTimeout($timeoutInSeconds) {
@@ -102,23 +110,23 @@ class Client extends \SoapClient {
         } else {
             $this->negotiationTimeout = $timeoutInSeconds;
         }
-        
+
         return $this;
     }
-    
+
     /**
      * Gets the negotiation (connection) timeout in seconds
-     * 
+     *
      * @return int
      */
     public function getNegotiationTimeout() {
         return $this->negotiationTimeout;
     }
-    
+
     /**
      * Sets the maximum number of full data read (connection+read) retries.
      * Value must be at least equal to one.
-     * 
+     *
      * @param int $attempts
      */
     public function setPersistanceFactor($attempts) {
@@ -127,36 +135,43 @@ class Client extends \SoapClient {
         } else {
             $this->persistanceFactor = $attempts;
         }
-        
+
         return $this;
     }
-    
+
     /**
      * Gets the maximum number of full data read (connection+read) retries.
-     * 
+     *
      * @return int
      */
     public function getPersistanceFactor() {
         return $this->persistanceFactor;
     }
-    
+
     /**
      * Sets the data read (after a successful negotiation) timeout in seconds.
      * Throws an exception when value is negative.
-     * Set 0 to disable timeout.
-     * 
-     * @param type $timeoutInSeconds
+     * Set 0 to disable timeout. null to use ini default_socket_timeout
+     *
+     * @param int $timeoutInSeconds
      */
-    public function setPersistanceTimeout($timeoutInSeconds) {
-        if($timeoutInSeconds < 0) {
-            throw new \Exception('Persistance timeout must be a positive integer or 0 to disable.');
+    public function setPersistanceTimeout($timeoutInSeconds = null) {
+        if($timeoutInSeconds === null)
+        {
+            //let us try default to default_socket_timeout
+            $iniDefaultSocketTimeout = ini_get('default_socket_timeout');
+            $this->persistanceTimeout = $iniDefaultSocketTimeout ? $iniDefaultSocketTimeout : 0; //if setting missing default to disabled value (0)
         } else {
-            $this->persistanceTimeout = $timeoutInSeconds;
+            if($timeoutInSeconds < 0) {
+                throw new \Exception('Persistance timeout must be a positive integer, 0 to disable or null to use ini default_socket_timeout value.');
+            } else {
+                $this->persistanceTimeout = $timeoutInSeconds;
+            }
         }
-        
+
         return $this;
     }
-    
+
     /**
      * Gets the data read (after negotiation) timeout in seconds.
      * @return int
@@ -164,11 +179,11 @@ class Client extends \SoapClient {
     public function getPersistanceTimeout() {
         return $this->persistanceTimeout;
     }
-    
+
     /**
      * Sets an array of custom http headers to be sent together with the request.
      * Throws an exception if not an array.
-     * 
+     *
      * @param array $headers
      */
     public function setHeaders($headers) {
@@ -179,20 +194,20 @@ class Client extends \SoapClient {
             throw new \Exception('Not an array.');
         }
     }
-    
+
     /**
      * Gets the array of custom headers to be sent together with the request.
-     * 
+     *
      * @return array
      */
     public function getHeaders() {
         return $this->customHeaders;
     }
-    
+
     /**
      * Sets a custom header to be sent together with the request.
      * Throws an exception if header's name is not at least 1 char long.
-     * 
+     *
      * @param string $header
      * @param string $value
      */
@@ -203,27 +218,27 @@ class Client extends \SoapClient {
         $this->customHeaders[$header] = $value;
         return $this;
     }
-    
+
     /**
      * Gets a custom header from the array of headers to be sent with the request or null.
-     * 
+     *
      * @param string $header
      * @return string
      */
     public function getHeader($header) {
         return $this->customHeaders[$header];
     }
-    
+
     /**
      * Sets a boolean value of the flag which indicates if request should not worry about invalid SSL certificate.
-     * 
+     *
      * @param boolean $value
      */
     public function setIgnoreCertVerify($value) {
         $this->ignoreCertVerify = $value;
         return $this;
     }
-    
+
     /**
      * Gets the value of the flag which indicates if request should not worry about invalid SSL certificate.
      * @return boolean
@@ -231,14 +246,14 @@ class Client extends \SoapClient {
     public function getIgnoreCertVerify() {
         return $this->ignoreCertVerify;
     }
-    
-    
+
+
     /**
      * Performs the request using cUrl, should not be called directly, but through
      * normal usage of PHP SoapClient (using particular methods of the WebService).
      * Throws an exception if connection or data read fails more than the number of retries (persistanceFactor).
      * Returns data response / content.
-     * 
+     *
      * @param string $request Request (XML/Data) to be sent to the WebService parsed by SoapClient.
      * @param string $location WebService URL.
      * @param string $action Currently not used. In the signature for compatibility with SoapClient. TODO: to be used with particular soap versions.
@@ -261,24 +276,24 @@ class Client extends \SoapClient {
             $defaultHeaders = array("Content-Type"=>"type/application-xml");
             $headers = array_merge($defaultHeaders,$this->customHeaders);
             $headersFormatted = array();
-            foreach($headers as $header => $value) 
+            foreach($headers as $header => $value)
             {
                 $headersFormatted[] = $header . ": " . $value;
             }
-            
+
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headersFormatted);
             if($this->getIgnoreCertVerify() === true) {
                 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             } else {
                 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
             }
-            
+
             if($this->auth === true) {
                 $credentials = $this->authLogin;
-                $credentials .= ($this->authPassword !== null) ? ":" . $this->authPassword : "";                    
+                $credentials .= ($this->authPassword !== null) ? ":" . $this->authPassword : "";
                 curl_setopt($ch, CURLOPT_USERPWD, $credentials);
             }
-            
+
             $response = curl_exec($ch);
             $errno = curl_errno($ch);
             curl_close($ch);
