@@ -273,7 +273,7 @@ class Client extends \SoapClient {
             curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->negotiationTimeout);
             curl_setopt($ch, CURLOPT_TIMEOUT, $this->persistanceTimeout);
-            $defaultHeaders = array("Content-Type"=>"type/application-xml");
+            $defaultHeaders = array("Content-Type"=>"text/xml");
             $headers = array_merge($defaultHeaders,$this->customHeaders);
             $headersFormatted = array();
             foreach($headers as $header => $value)
