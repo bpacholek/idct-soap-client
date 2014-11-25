@@ -26,6 +26,15 @@ class Client extends \SoapClient {
     protected $authPassword;
 
     /**
+     * Value of the content-type header sent with every message.
+     * Defaults to text/xml, yet as some services expect type/application-xml
+     * or application/soap+xml allows override the default type.
+     *
+     * @var string
+     */
+    protected $contentType;
+
+    /**
      * Associative array of custom headers to sent together with the request
      *
      * @var array
@@ -84,6 +93,7 @@ class Client extends \SoapClient {
              ->setPersistanceTimeout($persistanceTimeout)
              ->setIgnoreCertVerify(false)
              ;
+
         if(array_key_exists("login",$options)) {
             $this->auth = true;
             $this->authLogin = $options['login'];
@@ -93,9 +103,42 @@ class Client extends \SoapClient {
                 $this->authPassword = null;
             }
         }
+
         $this->customHeaders = array();
+
+        //set the default contentType (text/xml)
+        $this->setContentType(null);
+
         parent::__construct($wsdl,$options);
     }
+
+    /**
+     * Sets the value of the contentType variable used in the content-type
+     * request header. Suggested values: text/xml; application/soap+xml;
+     * type/application-xml
+     *
+     * @param string $contentType
+     * @return self
+     */
+    public function setContentType($contentType) {
+        if(is_string($contentType) === true) {
+            $this->contentType = $contentType;
+        } else {
+            $this->contentType = "text/xml"; //defaults to text/xml
+        }
+
+        return $this;
+    }
+
+    /**
+     * Returns the value of the contentType variable
+     *
+     * @return string
+     */
+    public function getContentType() {
+        return $this->contentType;
+    }
+
 
     /**
      * Sets the negotiation (connection) timeout in seconds.
@@ -103,6 +146,7 @@ class Client extends \SoapClient {
      * Set 0 to disable the timeout.
      *
      * @param int $timeoutInSeconds
+     * @return self
      */
     public function setNegotiationTimeout($timeoutInSeconds) {
         if($timeoutInSeconds < 0) {
@@ -128,6 +172,7 @@ class Client extends \SoapClient {
      * Value must be at least equal to one.
      *
      * @param int $attempts
+     * @return self
      */
     public function setPersistanceFactor($attempts) {
         if($attempts < 1) {
@@ -154,6 +199,7 @@ class Client extends \SoapClient {
      * Set 0 to disable timeout. null to use ini default_socket_timeout
      *
      * @param int $timeoutInSeconds
+     * @return self
      */
     public function setPersistanceTimeout($timeoutInSeconds = null) {
         if($timeoutInSeconds === null)
@@ -185,6 +231,7 @@ class Client extends \SoapClient {
      * Throws an exception if not an array.
      *
      * @param array $headers
+     * @return self
      */
     public function setHeaders($headers) {
         if(is_array($headers))
@@ -193,6 +240,8 @@ class Client extends \SoapClient {
         } else {
             throw new \Exception('Not an array.');
         }
+
+        return $this;
     }
 
     /**
@@ -210,12 +259,14 @@ class Client extends \SoapClient {
      *
      * @param string $header
      * @param string $value
+     * @return self
      */
     public function setHeader($header, $value) {
         if(strlen($header) < 1) {
             throw new \Exception('Header must be a string.');
         }
         $this->customHeaders[$header] = $value;
+
         return $this;
     }
 
@@ -233,9 +284,11 @@ class Client extends \SoapClient {
      * Sets a boolean value of the flag which indicates if request should not worry about invalid SSL certificate.
      *
      * @param boolean $value
+     * @return self
      */
     public function setIgnoreCertVerify($value) {
         $this->ignoreCertVerify = $value;
+
         return $this;
     }
 
@@ -273,8 +326,8 @@ class Client extends \SoapClient {
             curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->negotiationTimeout);
             curl_setopt($ch, CURLOPT_TIMEOUT, $this->persistanceTimeout);
-            $defaultHeaders = array("Content-Type"=>"text/xml");
-            $headers = array_merge($defaultHeaders,$this->customHeaders);
+            $defaultHeaders = array("Content-Type" => $this->contentType);
+            $headers = array_merge($defaultHeaders, $this->customHeaders);
             $headersFormatted = array();
             foreach($headers as $header => $value)
             {

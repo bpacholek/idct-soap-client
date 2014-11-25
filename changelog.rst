@@ -1,3 +1,10 @@
+version 0.1.2 (2014-11-25)
+================
+
+* Default value for the content-type header set to text/xml
+* Added support for different content-type header values
+
+
 version 0.1.1 (2014-08-16)
 ================
 
