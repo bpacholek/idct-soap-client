@@ -2,7 +2,8 @@
 
 namespace IDCT\Networking\Soap;
 
-class Client extends \SoapClient {
+class Client extends \SoapClient
+{
 
     /**
      * Defines if request will be sent with a basic http auth
@@ -79,10 +80,9 @@ class Client extends \SoapClient {
      * @param int $persistanceFactor Number of retries.
      * @param int $persistanceTimeout Read timeout in seconds. 0 to disable. null to use ini default_socket_timeout
      */
-    public function __construct($wsdl, $options, $negotiationTimeout = 0, $persistanceFactor = 1, $persistanceTimeout = null) {
-
-        if($persistanceTimeout === null)
-        {
+    public function __construct($wsdl, $options, $negotiationTimeout = 0, $persistanceFactor = 1, $persistanceTimeout = null)
+    {
+        if ($persistanceTimeout === null) {
             //let us try default to default_socket_timeout
             $iniDefaultSocketTimeout = ini_get('default_socket_timeout');
             $persistanceTimeout = $iniDefaultSocketTimeout ? $iniDefaultSocketTimeout : 0; //if setting missing default to disabled value (0)
@@ -94,10 +94,10 @@ class Client extends \SoapClient {
              ->setIgnoreCertVerify(false)
              ;
 
-        if(array_key_exists("login",$options)) {
+        if (array_key_exists("login", $options)) {
             $this->auth = true;
             $this->authLogin = $options['login'];
-            if(array_key_exists("password",$options)) {
+            if (array_key_exists("password", $options)) {
                 $this->authPassword = $options['password'];
             } else {
                 $this->authPassword = null;
@@ -109,7 +109,7 @@ class Client extends \SoapClient {
         //set the default contentType (text/xml)
         $this->setContentType(null);
 
-        parent::__construct($wsdl,$options);
+        parent::__construct($wsdl, $options);
     }
 
     /**
@@ -120,8 +120,9 @@ class Client extends \SoapClient {
      * @param string $contentType
      * @return self
      */
-    public function setContentType($contentType) {
-        if(is_string($contentType) === true) {
+    public function setContentType($contentType)
+    {
+        if (is_string($contentType) === true) {
             $this->contentType = $contentType;
         } else {
             $this->contentType = "text/xml"; //defaults to text/xml
@@ -135,7 +136,8 @@ class Client extends \SoapClient {
      *
      * @return string
      */
-    public function getContentType() {
+    public function getContentType()
+    {
         return $this->contentType;
     }
 
@@ -148,8 +150,9 @@ class Client extends \SoapClient {
      * @param int $timeoutInSeconds
      * @return self
      */
-    public function setNegotiationTimeout($timeoutInSeconds) {
-        if($timeoutInSeconds < 0) {
+    public function setNegotiationTimeout($timeoutInSeconds)
+    {
+        if ($timeoutInSeconds < 0) {
             throw new \Exception('Negotiation timeout must be a positive integer or 0 to disable.');
         } else {
             $this->negotiationTimeout = $timeoutInSeconds;
@@ -163,7 +166,8 @@ class Client extends \SoapClient {
      *
      * @return int
      */
-    public function getNegotiationTimeout() {
+    public function getNegotiationTimeout()
+    {
         return $this->negotiationTimeout;
     }
 
@@ -174,8 +178,9 @@ class Client extends \SoapClient {
      * @param int $attempts
      * @return self
      */
-    public function setPersistanceFactor($attempts) {
-        if($attempts < 1) {
+    public function setPersistanceFactor($attempts)
+    {
+        if ($attempts < 1) {
             throw new \Exception('Number of attempts must be at least equal to 1.');
         } else {
             $this->persistanceFactor = $attempts;
@@ -189,7 +194,8 @@ class Client extends \SoapClient {
      *
      * @return int
      */
-    public function getPersistanceFactor() {
+    public function getPersistanceFactor()
+    {
         return $this->persistanceFactor;
     }
 
@@ -201,14 +207,14 @@ class Client extends \SoapClient {
      * @param int $timeoutInSeconds
      * @return self
      */
-    public function setPersistanceTimeout($timeoutInSeconds = null) {
-        if($timeoutInSeconds === null)
-        {
+    public function setPersistanceTimeout($timeoutInSeconds = null)
+    {
+        if ($timeoutInSeconds === null) {
             //let us try default to default_socket_timeout
             $iniDefaultSocketTimeout = ini_get('default_socket_timeout');
             $this->persistanceTimeout = $iniDefaultSocketTimeout ? $iniDefaultSocketTimeout : 0; //if setting missing default to disabled value (0)
         } else {
-            if($timeoutInSeconds < 0) {
+            if ($timeoutInSeconds < 0) {
                 throw new \Exception('Persistance timeout must be a positive integer, 0 to disable or null to use ini default_socket_timeout value.');
             } else {
                 $this->persistanceTimeout = $timeoutInSeconds;
@@ -222,7 +228,8 @@ class Client extends \SoapClient {
      * Gets the data read (after negotiation) timeout in seconds.
      * @return int
      */
-    public function getPersistanceTimeout() {
+    public function getPersistanceTimeout()
+    {
         return $this->persistanceTimeout;
     }
 
@@ -233,9 +240,9 @@ class Client extends \SoapClient {
      * @param array $headers
      * @return self
      */
-    public function setHeaders($headers) {
-        if(is_array($headers))
-        {
+    public function setHeaders($headers)
+    {
+        if (is_array($headers)) {
             $this->customHeaders = $headers;
         } else {
             throw new \Exception('Not an array.');
@@ -249,7 +256,8 @@ class Client extends \SoapClient {
      *
      * @return array
      */
-    public function getHeaders() {
+    public function getHeaders()
+    {
         return $this->customHeaders;
     }
 
@@ -261,8 +269,9 @@ class Client extends \SoapClient {
      * @param string $value
      * @return self
      */
-    public function setHeader($header, $value) {
-        if(strlen($header) < 1) {
+    public function setHeader($header, $value)
+    {
+        if (strlen($header) < 1) {
             throw new \Exception('Header must be a string.');
         }
         $this->customHeaders[$header] = $value;
@@ -276,7 +285,8 @@ class Client extends \SoapClient {
      * @param string $header
      * @return string
      */
-    public function getHeader($header) {
+    public function getHeader($header)
+    {
         return $this->customHeaders[$header];
     }
 
@@ -286,7 +296,8 @@ class Client extends \SoapClient {
      * @param boolean $value
      * @return self
      */
-    public function setIgnoreCertVerify($value) {
+    public function setIgnoreCertVerify($value)
+    {
         $this->ignoreCertVerify = $value;
 
         return $this;
@@ -296,7 +307,8 @@ class Client extends \SoapClient {
      * Gets the value of the flag which indicates if request should not worry about invalid SSL certificate.
      * @return boolean
      */
-    public function getIgnoreCertVerify() {
+    public function getIgnoreCertVerify()
+    {
         return $this->ignoreCertVerify;
     }
 
@@ -314,12 +326,13 @@ class Client extends \SoapClient {
      * @param bool $one_way Currently not used. In the signature for compatibility with SoapClient.
      * @return mixed
      */
-    public function __doRequest ($request, $location, $action, $version, $one_way = null) {
+    public function __doRequest($request, $location, $action, $version, $one_way = null)
+    {
         $response = "";
-        for($attempt = 0; $attempt < $this->persistanceFactor; $attempt++) {
+        for ($attempt = 0; $attempt < $this->persistanceFactor; $attempt++) {
             $ch = curl_init($location);
             curl_setopt($ch, CURLOPT_HEADER, false);
-            if($one_way !== true) {
+            if ($one_way !== true) {
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             }
             curl_setopt($ch, CURLOPT_POST, true);
@@ -329,19 +342,18 @@ class Client extends \SoapClient {
             $defaultHeaders = array("Content-Type" => $this->contentType);
             $headers = array_merge($defaultHeaders, $this->customHeaders);
             $headersFormatted = array();
-            foreach($headers as $header => $value)
-            {
+            foreach ($headers as $header => $value) {
                 $headersFormatted[] = $header . ": " . $value;
             }
 
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headersFormatted);
-            if($this->getIgnoreCertVerify() === true) {
+            if ($this->getIgnoreCertVerify() === true) {
                 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             } else {
                 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
             }
 
-            if($this->auth === true) {
+            if ($this->auth === true) {
                 $credentials = $this->authLogin;
                 $credentials .= ($this->authPassword !== null) ? ":" . $this->authPassword : "";
                 curl_setopt($ch, CURLOPT_USERPWD, $credentials);
@@ -359,5 +371,4 @@ class Client extends \SoapClient {
         }
         return $response;
     }
-
 }
