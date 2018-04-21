@@ -11,8 +11,8 @@
     "license": "MIT",
     "authors": [
         {
-            "name": "Bartosz Pachołek",
-            "email": "bartosz@ideaconnect.pl",
+            "name": "IDCT Bartosz Pachołek",
+            "email": "bartosz@idct.pl",
             "role": "lead"
         }
     ],
@@ -21,14 +21,16 @@
     },
     "minimum-stability": "dev",
     "require": {
-        "php": ">=5.3.0"
+        "php": ">=5.3.0",
+        "ext-soap": "*",
+        "ext-curl": "*"
     },
     "autoload": {
         "classmap": [
             "src/"
-        ]
-    },
-    "include-path": [
-        ""
-    ]
+        ],
+        "psr-4": {
+            "IDCT\\Networking\\Soap\\": "src/"
+        }
+    }
 }

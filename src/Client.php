@@ -2,9 +2,11 @@
 
 namespace IDCT\Networking\Soap;
 
-class Client extends \SoapClient
-{
+use Exception;
+use SoapClient;
 
+class Client extends SoapClient
+{
     /**
      * Defines if request will be sent with a basic http auth
      *
@@ -80,7 +82,7 @@ class Client extends \SoapClient
      * @param int $persistanceFactor Number of retries.
      * @param int $persistanceTimeout Read timeout in seconds. 0 to disable. null to use ini default_socket_timeout
      */
-    public function __construct($wsdl, $options = array(), $negotiationTimeout = 0, $persistanceFactor = 1, $persistanceTimeout = null)
+    public function __construct($wsdl, $options = [], $negotiationTimeout = 0, $persistanceFactor = 1, $persistanceTimeout = null)
     {
         if ($persistanceTimeout === null) {
             //let us try default to default_socket_timeout
@@ -104,12 +106,72 @@ class Client extends \SoapClient
             }
         }
 
-        $this->customHeaders = array();
+        $this->customHeaders = [];
 
         //set the default contentType (text/xml)
         $this->setContentType(null);
 
         parent::__construct($wsdl, $options);
+    }
+
+    /**
+     * Performs the request using cUrl, should not be called directly, but through
+     * normal usage of PHP SoapClient (using particular methods of the WebService).
+     * Throws an exception if connection or data read fails more than the number of retries (persistanceFactor).
+     * Returns data response / content.
+     *
+     * @param string $request Request (XML/Data) to be sent to the WebService parsed by SoapClient.
+     * @param string $location WebService URL.
+     * @param string $action Currently not used. In the signature for compatibility with SoapClient. TODO: to be used with particular soap versions.
+     * @param int $version Currently not used. In the signature for compatibility with SoapClient. TODO: add Soap Version selection.
+     * @param bool $one_way Currently not used. In the signature for compatibility with SoapClient.
+     * @return mixed
+     */
+    public function __doRequest($request, $location, $action, $version, $one_way = null)
+    {
+        $response = "";
+        for ($attempt = 0; $attempt < $this->persistanceFactor; $attempt++) {
+            $ch = curl_init($location);
+            curl_setopt($ch, CURLOPT_HEADER, false);
+            if ($one_way !== true) {
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            }
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->negotiationTimeout);
+            curl_setopt($ch, CURLOPT_TIMEOUT, $this->persistanceTimeout);
+            $defaultHeaders = ["Content-Type" => $this->contentType];
+            $headers = array_merge($defaultHeaders, $this->customHeaders);
+            $headersFormatted = [];
+            foreach ($headers as $header => $value) {
+                $headersFormatted[] = $header . ": " . $value;
+            }
+
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headersFormatted);
+            if ($this->getIgnoreCertVerify() === true) {
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            } else {
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            }
+
+            if ($this->auth === true) {
+                $credentials = $this->authLogin;
+                $credentials .= ($this->authPassword !== null) ? ":" . $this->authPassword : "";
+                curl_setopt($ch, CURLOPT_USERPWD, $credentials);
+            }
+
+            $response = curl_exec($ch);
+            $errno = curl_errno($ch);
+            curl_close($ch);
+            if (($errno === 0) && ($response !== false)) {
+                break;
+            }
+            if ($attempt >= $this->persistanceFactor - 1) {
+                throw new Exception('Request failed for the maximum number of attempts.');
+            }
+        }
+
+        return $response;
     }
 
     /**
@@ -141,7 +203,6 @@ class Client extends \SoapClient
         return $this->contentType;
     }
 
-
     /**
      * Sets the negotiation (connection) timeout in seconds.
      * Throws an exception in case a negative value.
@@ -153,7 +214,7 @@ class Client extends \SoapClient
     public function setNegotiationTimeout($timeoutInSeconds)
     {
         if ($timeoutInSeconds < 0) {
-            throw new \Exception('Negotiation timeout must be a positive integer or 0 to disable.');
+            throw new Exception('Negotiation timeout must be a positive integer or 0 to disable.');
         } else {
             $this->negotiationTimeout = $timeoutInSeconds;
         }
@@ -181,7 +242,7 @@ class Client extends \SoapClient
     public function setPersistanceFactor($attempts)
     {
         if ($attempts < 1) {
-            throw new \Exception('Number of attempts must be at least equal to 1.');
+            throw new Exception('Number of attempts must be at least equal to 1.');
         } else {
             $this->persistanceFactor = $attempts;
         }
@@ -215,7 +276,7 @@ class Client extends \SoapClient
             $this->persistanceTimeout = $iniDefaultSocketTimeout ? $iniDefaultSocketTimeout : 0; //if setting missing default to disabled value (0)
         } else {
             if ($timeoutInSeconds < 0) {
-                throw new \Exception('Persistance timeout must be a positive integer, 0 to disable or null to use ini default_socket_timeout value.');
+                throw new Exception('Persistance timeout must be a positive integer, 0 to disable or null to use ini default_socket_timeout value.');
             } else {
                 $this->persistanceTimeout = $timeoutInSeconds;
             }
@@ -245,7 +306,7 @@ class Client extends \SoapClient
         if (is_array($headers)) {
             $this->customHeaders = $headers;
         } else {
-            throw new \Exception('Not an array.');
+            throw new Exception('Not an array.');
         }
 
         return $this;
@@ -272,7 +333,7 @@ class Client extends \SoapClient
     public function setHeader($header, $value)
     {
         if (strlen($header) < 1) {
-            throw new \Exception('Header must be a string.');
+            throw new Exception('Header must be a string.');
         }
         $this->customHeaders[$header] = $value;
 
@@ -310,65 +371,5 @@ class Client extends \SoapClient
     public function getIgnoreCertVerify()
     {
         return $this->ignoreCertVerify;
-    }
-
-
-    /**
-     * Performs the request using cUrl, should not be called directly, but through
-     * normal usage of PHP SoapClient (using particular methods of the WebService).
-     * Throws an exception if connection or data read fails more than the number of retries (persistanceFactor).
-     * Returns data response / content.
-     *
-     * @param string $request Request (XML/Data) to be sent to the WebService parsed by SoapClient.
-     * @param string $location WebService URL.
-     * @param string $action Currently not used. In the signature for compatibility with SoapClient. TODO: to be used with particular soap versions.
-     * @param int $version Currently not used. In the signature for compatibility with SoapClient. TODO: add Soap Version selection.
-     * @param bool $one_way Currently not used. In the signature for compatibility with SoapClient.
-     * @return mixed
-     */
-    public function __doRequest($request, $location, $action, $version, $one_way = null)
-    {
-        $response = "";
-        for ($attempt = 0; $attempt < $this->persistanceFactor; $attempt++) {
-            $ch = curl_init($location);
-            curl_setopt($ch, CURLOPT_HEADER, false);
-            if ($one_way !== true) {
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            }
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->negotiationTimeout);
-            curl_setopt($ch, CURLOPT_TIMEOUT, $this->persistanceTimeout);
-            $defaultHeaders = array("Content-Type" => $this->contentType);
-            $headers = array_merge($defaultHeaders, $this->customHeaders);
-            $headersFormatted = array();
-            foreach ($headers as $header => $value) {
-                $headersFormatted[] = $header . ": " . $value;
-            }
-
-            curl_setopt($ch, CURLOPT_HTTPHEADER, $headersFormatted);
-            if ($this->getIgnoreCertVerify() === true) {
-                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            } else {
-                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-            }
-
-            if ($this->auth === true) {
-                $credentials = $this->authLogin;
-                $credentials .= ($this->authPassword !== null) ? ":" . $this->authPassword : "";
-                curl_setopt($ch, CURLOPT_USERPWD, $credentials);
-            }
-
-            $response = curl_exec($ch);
-            $errno = curl_errno($ch);
-            curl_close($ch);
-            if (($errno === 0) && ($response !== false)) {
-                break;
-            }
-            if ($attempt >= $this->persistanceFactor - 1) {
-                throw new \Exception('Request failed for the maximum number of attempts.');
-            }
-        }
-        return $response;
     }
 }
