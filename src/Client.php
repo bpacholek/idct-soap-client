@@ -74,13 +74,13 @@ class Client extends \SoapClient
      * Constructor of the new object. Creates an instance of the new SoapClient.
      * Sets default values of the timeouts and number of retries.
      *
-     * @param sting $wsdl Url of the WebService's wsdl
+     * @param string $wsdl Url of the WebService's wsdl
      * @param array $options PHP SoapClient's array of options
      * @param int $negotiationTimeout Connection timeout in seconds. 0 to disable.
      * @param int $persistanceFactor Number of retries.
      * @param int $persistanceTimeout Read timeout in seconds. 0 to disable. null to use ini default_socket_timeout
      */
-    public function __construct($wsdl, $options, $negotiationTimeout = 0, $persistanceFactor = 1, $persistanceTimeout = null)
+    public function __construct($wsdl, $options = array(), $negotiationTimeout = 0, $persistanceFactor = 1, $persistanceTimeout = null)
     {
         if ($persistanceTimeout === null) {
             //let us try default to default_socket_timeout
