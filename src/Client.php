@@ -140,8 +140,27 @@ class Client extends SoapClient
             curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->negotiationTimeout);
             curl_setopt($ch, CURLOPT_TIMEOUT, $this->persistanceTimeout);
-            $defaultHeaders = ["Content-Type" => $this->contentType];
-            $headers = array_merge($defaultHeaders, $this->customHeaders);
+            $headers = $this->customHeaders;
+
+            //add version specific headers
+            switch ($version) {
+                case SOAP_1_1:
+                    $headers['Content-Type'] = is_null($this->contentType) ? 'text/xml' : $this->contentType;
+                    if (!empty($action)) {
+                        $headers['SOAPAction'] = '"'. str_replace('"', '\"', $action) . '"';
+                    }
+
+                break;
+                case SOAP_1_2:
+                    if ($this->contentType === null) {
+                        $headers['Content-Type'] = 'application/soap+xml; charset=utf-8';
+                        if (!empty($action)) {
+                            $headers['Content-Type'] .= '; action="'.str_replace('"', '\"', $action).'"';
+                        }
+                    }
+                break;
+            }
+
             $headersFormatted = [];
             foreach ($headers as $header => $value) {
                 $headersFormatted[] = $header . ": " . $value;
@@ -180,15 +199,15 @@ class Client extends SoapClient
      * type/application-xml
      *
      * @param string $contentType
-     * @return self
+     * @return $this
      */
-    public function setContentType($contentType)
+    public function setContentType($contentType = null)
     {
-        if (is_string($contentType) === true) {
-            $this->contentType = $contentType;
-        } else {
-            $this->contentType = "text/xml"; //defaults to text/xml
+        if (!$contentType !== null && !is_string($contentType)) {
+            throw new Exception('Content-type value must be a valid string or null to use Soap verion defaults.');
         }
+
+        $this->contentType = $contentType;
 
         return $this;
     }
@@ -209,7 +228,7 @@ class Client extends SoapClient
      * Set 0 to disable the timeout.
      *
      * @param int $timeoutInSeconds
-     * @return self
+     * @return $this
      */
     public function setNegotiationTimeout($timeoutInSeconds)
     {
@@ -237,7 +256,7 @@ class Client extends SoapClient
      * Value must be at least equal to one.
      *
      * @param int $attempts
-     * @return self
+     * @return $this
      */
     public function setPersistanceFactor($attempts)
     {
@@ -266,7 +285,7 @@ class Client extends SoapClient
      * Set 0 to disable timeout. null to use ini default_socket_timeout
      *
      * @param int $timeoutInSeconds
-     * @return self
+     * @return $this
      */
     public function setPersistanceTimeout($timeoutInSeconds = null)
     {
@@ -299,7 +318,7 @@ class Client extends SoapClient
      * Throws an exception if not an array.
      *
      * @param array $headers
-     * @return self
+     * @return $this
      */
     public function setHeaders($headers)
     {
@@ -328,7 +347,7 @@ class Client extends SoapClient
      *
      * @param string $header
      * @param string $value
-     * @return self
+     * @return $this
      */
     public function setHeader($header, $value)
     {
@@ -355,7 +374,7 @@ class Client extends SoapClient
      * Sets a boolean value of the flag which indicates if request should not worry about invalid SSL certificate.
      *
      * @param boolean $value
-     * @return self
+     * @return $this
      */
     public function setIgnoreCertVerify($value)
     {
