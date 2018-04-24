@@ -157,8 +157,16 @@ class Client extends SoapClient
                         if (!empty($action)) {
                             $headers['Content-Type'] .= '; action="'.str_replace('"', '\"', $action).'"';
                         }
+                    } else {
+                        if (empty($action)) {
+                            $headers['Content-Type'] = $this->contentType;
+                        } else {
+                            //allows usage of SOAPACTION replacement token
+                            $headers['Content-Type'] = str_replace("{SOAPACTION}", str_replace('"', '\"', $action), $this->contentType);
+                        }
                     }
                 break;
+                default:
             }
 
             $headersFormatted = [];
