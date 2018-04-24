@@ -167,6 +167,7 @@ class Client extends SoapClient
                     }
                 break;
                 default:
+                    $headers['Content-Type'] = 'application/soap+xml';
             }
 
             $headersFormatted = [];
