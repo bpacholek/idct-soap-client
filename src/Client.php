@@ -212,7 +212,7 @@ class Client extends SoapClient
      */
     public function setContentType($contentType = null)
     {
-        if (!$contentType !== null && !is_string($contentType)) {
+        if ($contentType !== null && !is_string($contentType)) {
             throw new Exception('Content-type value must be a valid string or null to use Soap verion defaults.');
         }
 
