@@ -1,3 +1,7 @@
+# 0.2.1
+* Reorganised code.
+* Tagged release.
+
 # 0.2.0
 * Added PSR-4 improvements.
 * Changed changelog.rst to CHANGELOG.md

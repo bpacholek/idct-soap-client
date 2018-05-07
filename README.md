@@ -29,3 +29,21 @@ Can be set in the constructor or using ``setNegotiationTimeout`` method.
 Sets the maximum amount of seconds cUrl will try to establish connection with
 the WebService before treating the request as failed. As a connectin timeout.
 By default set to 0 which means *disabled*.
+
+## tips
+
+### Content-Type and SOAPAction
+
+Protocol __SOAP 1.1__ requires SOAPAction header to be set. Method `buildHeaders`
+automatically adds it during soap request. In __SOAP 1.2__ SOAPAction is included
+ in `Content-type` header therefore if you need to overwrite `Content-type` with
+__SOAP 1.2__ be sure to include `{SOAPACTION}` token for automatic replacement.
+
+## contribution
+
+If you find any issues or want to add new features please use the Issues or
+Pull Request functions: code addition is much appreciated!
+
+Before sending code be sure to run `fix_code.sh` to clean it up.
+
+Thanks!

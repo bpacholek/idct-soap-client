@@ -25,6 +25,9 @@
         "ext-soap": "*",
         "ext-curl": "*"
     },
+    "require-dev": {
+        "FriendsOfPHP/php-cs-fixer": "^2.11"
+    },
     "autoload": {
         "classmap": [
             "src/"
@@ -34,4 +37,3 @@
         }
     }
 }
-

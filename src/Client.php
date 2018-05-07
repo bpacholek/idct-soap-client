@@ -73,6 +73,14 @@ class Client extends SoapClient
     protected $persistanceTimeout;
 
     /**
+     * Last connection's error number. Returned from curl_errno. 0 means no error.
+     * `null` means that no query was executed yet.
+     *
+     * @var int|null
+     */
+    protected $lastConnErrNo;
+
+    /**
      * Constructor of the new object. Creates an instance of the new SoapClient.
      * Sets default values of the timeouts and number of retries.
      *
@@ -107,10 +115,6 @@ class Client extends SoapClient
         }
 
         $this->customHeaders = [];
-
-        //set the default contentType (text/xml)
-        $this->setContentType(null);
-
         parent::__construct($wsdl, $options);
     }
 
@@ -140,41 +144,7 @@ class Client extends SoapClient
             curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->negotiationTimeout);
             curl_setopt($ch, CURLOPT_TIMEOUT, $this->persistanceTimeout);
-            $headers = $this->customHeaders;
-
-            //add version specific headers
-            switch ($version) {
-                case SOAP_1_1:
-                    $headers['Content-Type'] = is_null($this->contentType) ? 'text/xml' : $this->contentType;
-                    if (!empty($action)) {
-                        $headers['SOAPAction'] = '"'. str_replace('"', '\"', $action) . '"';
-                    }
-
-                break;
-                case SOAP_1_2:
-                    if ($this->contentType === null) {
-                        $headers['Content-Type'] = 'application/soap+xml; charset=utf-8';
-                        if (!empty($action)) {
-                            $headers['Content-Type'] .= '; action="'.str_replace('"', '\"', $action).'"';
-                        }
-                    } else {
-                        if (empty($action)) {
-                            $headers['Content-Type'] = $this->contentType;
-                        } else {
-                            //allows usage of SOAPACTION replacement token
-                            $headers['Content-Type'] = str_replace("{SOAPACTION}", str_replace('"', '\"', $action), $this->contentType);
-                        }
-                    }
-                break;
-                default:
-                    $headers['Content-Type'] = 'application/soap+xml';
-            }
-
-            $headersFormatted = [];
-            foreach ($headers as $header => $value) {
-                $headersFormatted[] = $header . ": " . $value;
-            }
-
+            $headersFormatted = $this->buildHeaders($version);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headersFormatted);
             if ($this->getIgnoreCertVerify() === true) {
                 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -189,9 +159,10 @@ class Client extends SoapClient
             }
 
             $response = curl_exec($ch);
-            $errno = curl_errno($ch);
+            $this->lastConnErrNo = curl_errno($ch);
+
             curl_close($ch);
-            if (($errno === 0) && ($response !== false)) {
+            if (($this->lastConnErrNo === 0) && ($response !== false)) {
                 break;
             }
             if ($attempt >= $this->persistanceFactor - 1) {
@@ -200,6 +171,29 @@ class Client extends SoapClient
         }
 
         return $response;
+    }
+
+    /**
+     * Returns last connection's error number. Returned by curl_errno. 0 means
+     * that no error occured. `null` means that no query was executed yet.
+     *
+     * @return int|null
+     */
+    public function getLastConnErrNo()
+    {
+        return $this->lastConnErrNo;
+    }
+
+    /**
+     * Gets textual representation of the last error returned by `getLastConnErrNo`.
+     *
+     * Returns empty string on success.
+     *
+     * @return string
+     */
+    public function getLastConnErrText()
+    {
+        return curl_strerror((int) $this->getLastConnErrNo);
     }
 
     /**
@@ -399,5 +393,52 @@ class Client extends SoapClient
     public function getIgnoreCertVerify()
     {
         return $this->ignoreCertVerify;
+    }
+
+    /**
+     * Builds and returns an array of headers, based on custom ones and required
+     * by soap call protocol's version (like SOAPAction or specific content type).
+     *
+     * @param int $version SOAP protocol version (SOAP_1_1, SOAP_1_2)
+     * @return string[]
+     */
+    protected function buildHeaders($version)
+    {
+        $headers = $this->customHeaders;
+
+        //add version specific headers
+        switch ($version) {
+            case SOAP_1_1:
+                $headers['Content-Type'] = is_null($this->contentType) ? 'text/xml' : $this->contentType;
+                if (!empty($action)) {
+                    $headers['SOAPAction'] = '"'. str_replace('"', '\"', $action) . '"';
+                }
+
+            break;
+            case SOAP_1_2:
+                if ($this->contentType === null) {
+                    $headers['Content-Type'] = 'application/soap+xml; charset=utf-8';
+                    if (!empty($action)) {
+                        $headers['Content-Type'] .= '; action="'.str_replace('"', '\"', $action).'"';
+                    }
+                } else {
+                    if (empty($action)) {
+                        $headers['Content-Type'] = $this->contentType;
+                    } else {
+                        //allows usage of SOAPACTION replacement token
+                        $headers['Content-Type'] = str_replace("{SOAPACTION}", str_replace('"', '\"', $action), $this->contentType);
+                    }
+                }
+            break;
+            default:
+                $headers['Content-Type'] = 'application/soap+xml';
+        }
+
+        $headersFormatted = [];
+        foreach ($headers as $header => $value) {
+            $headersFormatted[] = $header . ": " . $value;
+        }
+
+        return $headersFormatted;
     }
 }
