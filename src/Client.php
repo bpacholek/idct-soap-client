@@ -144,7 +144,7 @@ class Client extends SoapClient
             curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->negotiationTimeout);
             curl_setopt($ch, CURLOPT_TIMEOUT, $this->persistanceTimeout);
-            $headersFormatted = $this->buildHeaders($version);
+            $headersFormatted = $this->buildHeaders($version, $action);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headersFormatted);
             if ($this->getIgnoreCertVerify() === true) {
                 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -159,6 +159,12 @@ class Client extends SoapClient
             }
 
             $response = curl_exec($ch);
+
+            if (strstr($response, 'Content-Type: application/xop+xml'))
+            {
+                $response = \stristr((string) \stristr($response, '<s:'), '</s:Envelope>', true).'</s:Envelope>';
+            }
+
             $this->lastConnErrNo = curl_errno($ch);
 
             curl_close($ch);
@@ -402,7 +408,7 @@ class Client extends SoapClient
      * @param int $version SOAP protocol version (SOAP_1_1, SOAP_1_2)
      * @return string[]
      */
-    protected function buildHeaders($version)
+    protected function buildHeaders($version, $action)
     {
         $headers = $this->customHeaders;
 
