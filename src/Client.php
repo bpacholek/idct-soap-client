@@ -199,7 +199,7 @@ class Client extends SoapClient
      */
     public function getLastConnErrText()
     {
-        return curl_strerror((int) $this->getLastConnErrNo);
+        return curl_strerror((int) $this->getLastConnErrNo());
     }
 
     /**
